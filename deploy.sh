@@ -1,3 +1,3 @@
 make run
 make fill-db
-make clean
+#make clean
