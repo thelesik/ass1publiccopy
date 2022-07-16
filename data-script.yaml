@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: data-script
+  name: data-script
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.network/myapp: "true"
+      io.kompose.service: data-script
+  template:
+    metadata:
+      labels:
+        io.kompose.network/myapp: "true"
+        io.kompose.service: data-script
+    spec:
+      containers:
+      - image: thelesik/quotes-script:v3
+        name: data-script
+        env:
+          - name: MYSQL_DB_HOST
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: MYSQL_DB_HOST
+                optional: false
+          - name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: MYSQL_USER
+                optional: false
+          - name: MYSQL_USER_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: MYSQL_USER_PASSWORD
+                optional: false
+      initContainers:
+      - name: init-data-script
+        image: thelesik/quotes-script:v3
+        env:
+          - name: MYSQL_DB_HOST
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: MYSQL_DB_HOST
+                optional: false
+          - name: MYSQL_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: MYSQL_USER
+                optional: false
+          - name: MYSQL_USER_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: MYSQL_USER_PASSWORD
+                optional: false
+        command: ['sh', '-c', "until mysql -h ${MYSQL_DB_HOST} -u     ${MYSQL_USER} -p${MYSQL_USER_PASSWORD} -e 'show databases;'; do echo waiting for mydb; sleep 2; done"]
+      restartPolicy: Always

@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: data
+  name: data
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.network/myapp: "true"
+      io.kompose.service: data
+  template:
+    metadata:
+      labels:
+        io.kompose.network/myapp: "true"
+        io.kompose.service: data
+    spec:
+      containers:
+      - name: db
+        image: thelesik/quotes-data:v1
+        volumeMounts:
+        - mountPath: "/var/lib/mysql"
+          name: nginx-storage
+        env:
+          - name: MYSQL_ALLOW_EMPTY_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: MYSQL_ALLOW_EMPTY_PASSWORD
+                optional: false
+          - name: MYSQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: MYSQL_DATABASE
+                optional: false
+          - name: MYSQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: MYSQL_PASSWORD
+                optional: false
+          - name: MYSQL_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: MYSQL_ROOT_PASSWORD
+                optional: false
+        ports:
+        - containerPort: 3306
+          #restartPolicy: Always
+      volumes:
+        - name: nginx-storage
+          persistentVolumeClaim:
+            claimName: nginx-pv-claim
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    io.kompose.service: data
+  name: data
+spec:
+  ports:
+  - name: "3306"
+    port: 3306
+    targetPort: 3306
+  selector:
+    io.kompose.network/myapp: "true"
+    io.kompose.service: data
